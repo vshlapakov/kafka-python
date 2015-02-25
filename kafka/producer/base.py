@@ -4,11 +4,12 @@ import logging
 import time
 
 try:
-    from queue import Empty
+    from queue import Empty, Queue
 except ImportError:
-    from Queue import Empty
+    from Queue import Empty, Queue
 from collections import defaultdict
-from multiprocessing import Queue, Process
+
+from threading import Thread
 
 import six
 
@@ -31,13 +32,8 @@ def _send_upstream(queue, client, codec, batch_time, batch_size,
     Listen on the queue for a specified number of messages or till
     a specified timeout and send them upstream to the brokers in one
     request
-
-    NOTE: Ideally, this should have been a method inside the Producer
-    class. However, multiprocessing module has issues in windows. The
-    functionality breaks unless this function is kept outside of a class
     """
     stop = False
-    client.reinit()
 
     while not stop:
         timeout = batch_time
@@ -140,18 +136,20 @@ class Producer(object):
             log.warning("Current implementation does not retry Failed messages")
             log.warning("Use at your own risk! (or help improve with a PR!)")
             self.queue = Queue()  # Messages are sent through this queue
-            self.proc = Process(target=_send_upstream,
-                                args=(self.queue,
-                                      self.client.copy(),
-                                      self.codec,
-                                      batch_send_every_t,
-                                      batch_send_every_n,
-                                      self.req_acks,
-                                      self.ack_timeout))
+            self.thread = Thread(target=_send_upstream,
+                                 args=(self.queue,
+                                       self.client.copy(),
+                                       self.codec,
+                                       batch_send_every_t,
+                                       batch_send_every_n,
+                                       self.req_acks,
+                                       self.ack_timeout))
 
-            # Process will die if main thread exits
-            self.proc.daemon = True
-            self.proc.start()
+            # Thread will die if main thread exits
+            self.thread.daemon = True
+            self.thread.start()
+
+
 
     def send_messages(self, topic, partition, *msg):
         """
@@ -208,7 +206,4 @@ class Producer(object):
         """
         if self.async:
             self.queue.put((STOP_ASYNC_PRODUCER, None, None))
-            self.proc.join(timeout)
-
-            if self.proc.is_alive():
-                self.proc.terminate()
+            self.thread.join(timeout)
