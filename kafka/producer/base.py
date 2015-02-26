@@ -24,7 +24,7 @@ log = logging.getLogger("kafka")
 BATCH_SEND_DEFAULT_INTERVAL = 20
 BATCH_SEND_MSG_COUNT = 20
 BATCH_RETRY_BACKOFF_MS = 300
-BATCH_RETRIES_LIMIT = 5
+BATCH_RETRIES_LIMIT = 0
 
 STOP_ASYNC_PRODUCER = -1
 
@@ -87,11 +87,11 @@ def _send_upstream(queue, client, codec, batch_time, batch_size,
             failed_reqs = ex.args[0]
             log.exception("Failed payloads count %s" % len(failed_reqs))
 
+            # if no limit, retry all failed messages until success
             if retries_limit is None:
-                # retry all failed messages until success
                 reqs_to_retry = failed_reqs
-            elif not retries_limit < 0:
-                #
+            # makes sense to check failed reqs only if we have a limit > 0
+            elif retries_limit > 0:
                 for req in failed_reqs:
                     if retries_limit and req.retries < retries_limit:
                         updated_req = req._replace(retries=req.retries+1)
