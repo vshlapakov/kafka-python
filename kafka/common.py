@@ -7,42 +7,49 @@ from collections import namedtuple
 ###############
 
 # Request payloads
-ProduceRequest = namedtuple("ProduceRequest",
-                            ["topic", "partition", "messages"])
+_ProduceRequest = namedtuple("ProduceRequest",
+    ["topic", "partition", "messages", "retries"])
+
+
+class ProduceRequest(_ProduceRequest):
+    def __new__(cls, topic, partition, messages, retries=0):
+        return super(ProduceRequest, cls).__new__(
+            cls, topic, partition, messages, retries)
+
 
 FetchRequest = namedtuple("FetchRequest",
-                          ["topic", "partition", "offset", "max_bytes"])
+    ["topic", "partition", "offset", "max_bytes"])
 
 OffsetRequest = namedtuple("OffsetRequest",
-                           ["topic", "partition", "time", "max_offsets"])
+    ["topic", "partition", "time", "max_offsets"])
 
 OffsetCommitRequest = namedtuple("OffsetCommitRequest",
-                                 ["topic", "partition", "offset", "metadata"])
+    ["topic", "partition", "offset", "metadata"])
 
 MetadataRequest = namedtuple("MetadataRequest",
     ["topics"])
 
-OffsetFetchRequest = namedtuple("OffsetFetchRequest", ["topic", "partition"])
+OffsetFetchRequest = namedtuple("OffsetFetchRequest",
+    ["topic", "partition"])
 
 MetadataResponse = namedtuple("MetadataResponse",
     ["brokers", "topics"])
 
 # Response payloads
 ProduceResponse = namedtuple("ProduceResponse",
-                             ["topic", "partition", "error", "offset"])
+    ["topic", "partition", "error", "offset"])
 
-FetchResponse = namedtuple("FetchResponse", ["topic", "partition", "error",
-                                             "highwaterMark", "messages"])
+FetchResponse = namedtuple("FetchResponse",
+    ["topic", "partition", "error", "highwaterMark", "messages"])
 
 OffsetResponse = namedtuple("OffsetResponse",
-                            ["topic", "partition", "error", "offsets"])
+    ["topic", "partition", "error", "offsets"])
 
 OffsetCommitResponse = namedtuple("OffsetCommitResponse",
-                                  ["topic", "partition", "error"])
+    ["topic", "partition", "error"])
 
 OffsetFetchResponse = namedtuple("OffsetFetchResponse",
-                                 ["topic", "partition", "offset",
-                                  "metadata", "error"])
+    ["topic", "partition", "offset", "metadata", "error"])
 
 
 
