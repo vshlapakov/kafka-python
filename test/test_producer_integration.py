@@ -304,7 +304,7 @@ class TestKafkaProducerIntegration(KafkaIntegrationTestCase):
         self.assertEqual(len(resp), 0)
 
         # Wait the timeout out
-        time.sleep(batch_interval)
+        time.sleep(batch_interval+1)
 
         self.assert_fetch_offset(partitions[0], start_offsets[0], [
             self.msg("one"),
